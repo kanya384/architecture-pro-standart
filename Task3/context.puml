@@ -1,0 +1,37 @@
+@startuml
+title Диаграмма контекста "Открытие Депозита" банка «Стандарт»
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Context.puml
+
+Person(client, "Клиент", "Подаёт заявку на депозит через сайт или интернет-банк")
+Person(deposit_manager, "Сотрудник бэк-офиса депозитов", "Подтверждает заявки, просматривает ставки в АБС")
+Person(credit_manager, "Сотрудник бэк-офиса кредитов", "Управляет ставками по депозитам в АБС")
+
+System_Boundary(bank_systems, "Банк «Стандарт»") {
+    System(site_system, "Сайт банка", "Оформление заявок новыми клиентами (ФИО + телефон)")
+    System(internet_bank_system, "Интернет-банк", "Оформление заявок существующими клиентами (счёт + сумма + СМС-подтверждение)")
+    System(approval_system, "Сервис подтверждения заявок", "Очередь заявок, UI для бэк-офиса, подтверждение/отклонение")
+    System(abs_system, "АБС (ядро)", "Учёт депозитов, ставки, открытие счетов (Delphi + Oracle)")
+    System(callcenter_system, "Система кол-центра", "Приём заявок с сайта, обзвон клиентов (платформа подрядчика)")
+    System(smsgateway_system, "СМС-шлюз", "Отправка кодов подтверждения и уведомлений об открытии")
+}
+
+System_Ext(telecom, "Телеком-оператор", "Внешний оператор связи для отправки СМС")
+
+Rel(client, site_system, "Оформляет заявку", "HTTPS + шифрование")
+Rel(client, internet_bank_system, "Оформляет заявку", "HTTPS + шифрование + СМС-код")
+Rel(site_system, callcenter_system, "Передаёт заявку", "mTLS (Istio)")
+Rel(callcenter_system, approval_system, "Добавляет заявку в очередь", "Брокер сообщений")
+Rel(internet_bank_system, approval_system, "Добавляет заявку в очередь", "Брокер сообщений")
+Rel(deposit_manager, approval_system, "Подтверждает/отклоняет заявки", "HTTPS / Web UI")
+Rel(approval_system, abs_system, "Передаёт подтверждённые заявки", "API (дозированно, через адаптер)")
+Rel(deposit_manager, abs_system, "Просматривает ставки", "Клиентское место АБС")
+Rel(credit_manager, abs_system, "Управляет ставками", "Клиентское место АБС")
+
+Rel(internet_bank_system, smsgateway_system, "Запрашивает СМС-код", "API")
+Rel(approval_system, smsgateway_system, "Отправляет уведомления об открытии/отказе", "API")
+Rel(smsgateway_system, telecom, "Отправляет СМС", "SMPP / API оператора")
+
+@enduml
