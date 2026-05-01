@@ -63,6 +63,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+
 # Build artifacts
 dist/
 build/
@@ -93,6 +94,7 @@ temp/
 *.bak
 *.swp
 *.swo
+*.bkp
 
 # OS specific
 .DS_Store
