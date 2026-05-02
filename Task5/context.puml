@@ -1,0 +1,41 @@
+@startuml
+!include <C4/C4_Container.puml>
+
+title Диаграмма контекста — Кредитный процесс
+
+Person(client, "Клиент")
+Person(manager, "Менеджер фронт-офиса")
+
+System_Ext(bki, "Бюро кредитных историй")
+System_Ext(sms_gateway, "СМС-шлюз")
+
+System(website, "Сайт")
+System(ib, "Интернет-банк")
+System(abs, "АБС")
+
+System_Ext(conveyor, "Кредитный конвейер")
+System_Ext(scoring, "Система кредитного скоринга")
+
+Rel(client, website, "Подаёт заявку")
+Rel(client, ib, "Подаёт заявку")
+Rel(client, manager, "Идёт в отделение")
+Rel(sms_gateway, client, "Отправляет SMS")
+
+Rel(website, conveyor, "Передаёт заявку")
+Rel(ib, conveyor, "Передаёт заявку")
+Rel(manager, abs, "Работает с заявкой")
+Rel(abs, conveyor, "Передаёт заявки (пакетно)")
+Rel(conveyor, abs, "Отдаёт одобренные заявки")
+
+Rel(conveyor, scoring, "Запрашивает рейтинг")
+Rel(scoring, conveyor, "Возвращает балл")
+Rel(scoring, bki, "Запрашивает историю")
+Rel(scoring, abs, "Запрашивает историю оплат")
+
+Rel(ib, sms_gateway, "Отправляет код")
+Rel(website, sms_gateway, "Отправляет приглашение")
+
+Rel(conveyor, scoring, "Инициирует предрасчёт")
+Rel(scoring, ib, "Загружает предодобренные суммы")
+
+@enduml

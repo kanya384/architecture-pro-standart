@@ -1,0 +1,29 @@
+@startuml
+title Диаграмма контекста "Управление депозитными ставками" банка «Стандарт»
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Context.puml
+
+Person(credit_manager, "Сотрудник кредитного отдела", "Управляет ставками по депозитам")
+Person(callcenter_operator, "Сотрудник кол-центра банка", "Консультирует клиентов по ставкам")
+Person(partner_operator, "Сотрудник партнёрского кол-центра", "Консультирует клиентов по ставкам (внешний подрядчик)")
+
+System_Boundary(bank_systems, "Банк «Стандарт»") {
+    System(abs_system, "АБС (ядро)", "Хранит и изменяет депозитные ставки (Delphi + Oracle)")
+    System(kafka, "Брокер сообщений Kafka", "Топик с изменениями ставок")
+    System(callcenter_system, "Система кол-центра банка", "Отображает актуальные ставки операторам")
+    System(file_adapter, "Адаптер выгрузки ставок", "Выгружает ставки в файлы для партнёра")
+}
+
+System_Ext(partner_callcenter, "Партнёрский кол-центр", "Внешняя система, работает с файлами, API не поддерживает")
+Rel(credit_manager, abs_system, "Рассчитывает и вводит ставки", "Клиентское место АБС")
+Rel(abs_system, kafka, "Публикует события об изменении ставок", "Брокер сообщений (одна транзакция с БД)")
+Rel(kafka, callcenter_system, "Доставляет изменения ставок", "Подписка на топик")
+Rel(kafka, file_adapter, "Доставляет изменения ставок", "Подписка на топик")
+Rel(file_adapter, partner_callcenter, "Передаёт файл с актуальными ставками", "SFTP / файловый обмен")
+
+Rel(callcenter_operator, callcenter_system, "Просматривает ставки для консультации", "UI")
+Rel(partner_operator, partner_callcenter, "Просматривает ставки для консультации", "UI (внешняя система)")
+
+@enduml

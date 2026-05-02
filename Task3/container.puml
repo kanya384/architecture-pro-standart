@@ -1,0 +1,51 @@
+```puml
+@startuml
+title Диаграмма контейнеров "Открытие Депозита" банка «Стандарт»
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(client, "Клиент")
+Person(deposit_manager, "Сотрудник бэкофиса депозитов")
+Person(credit_manager, "Сотрудник бэкофиса кредитов")
+System_Ext(telecom, "Телеком оператор", "Внешний оператор по отправке смс")
+
+System_Boundary(StandartBankSystem, "Банк «Стандарт»") {
+    System(abs, "АБС (ядро)", "Delphi + Oracle")
+    System(site, "Сайт банка", "React.js")
+    System(site_bff, "BFF сайта", "PHP")
+    System(internet_bank, "Интернет-банк", "ASP.NET MVC 4.5 на основе .NET Framework 4.5")
+    System(ib_bff_backend, "BFF интернет-банка", "ASP.NET MVC 4.5 на основе .NET Framework 4.5")
+    ContainerDb(ib_database, "БД интернет банка", "СУБД MS SQL")
+    System(kafka, "Брокер сообщений", "KAFKA")
+    System(approval_service_ui, "UI сервиса подтверждения заявок", "React.js")
+    System(approval_service_bff, "Микросервис подтверждения заявок", "Java Spring Boot")
+    ContainerDb(approval_service_bd, "БД микросервиса подтверждения заявок", "Oracle")
+
+
+    System(callcentr, "Система кол-центра", "Клиент-серверная система на платформе подрядчика")
+    System(smsgateway, "СМС-шлюз", "Шлюз телеком оператора")
+
+    Rel(client, site, "Оформление заявки")
+    Rel(client, internet_bank, "Оформление заявки")
+    Rel(site, site_bff, "HTTPS")
+    Rel(internet_bank, ib_bff_backend, "HTTPS")
+    Rel(ib_bff_backend, ib_database, "CRUD")
+    Rel(site_bff, callcentr, "mTLS(Istio)")
+    Rel(ib_bff_backend, smsgateway, "Отправка смс для подтверждения депозита")
+    Rel(smsgateway, telecom, "Отправка смс")
+    Rel(callcentr, kafka, "Добавление в очередь заявок на депозит")
+    Rel(ib_bff_backend, kafka, "Добавление в очередь заявок на депозит")
+    Rel(approval_service_ui, approval_service_bff, "REST")
+    Rel(approval_service_bff, approval_service_bd, "CRUD")
+    Rel(kafka, approval_service_bff, "Обработка очереди заявок")
+    Rel(deposit_manager, approval_service_ui, "Подтверждение заявок")
+    Rel(deposit_manager, abs, "Просмотр ставок по депозитам")
+    Rel(credit_manager, abs, "Просмотр/редактирование ставок по депозитам")
+    Rel(approval_service_bff, abs, "Передача подтвержденных заявок")
+    Rel(approval_service_bff, smsgateway, "Отправка смс-подтвержения ставки и открытия депозита")
+}
+
+@enduml
+```
