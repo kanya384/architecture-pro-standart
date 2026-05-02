@@ -1,0 +1,63 @@
+@startuml
+!include <C4/C4_Container.puml>
+
+title Диаграмма контейнеров — Кредитный процесс
+
+Person(client, "Клиент")
+Person(manager, "Менеджер фронт-офиса")
+
+System_Ext(bki, "Бюро кредитных историй (БКИ)")
+System_Ext(sms_provider, "СМС-провайдер")
+
+Container(web_frontend, "Фронтенд сайта", "React.js")
+Container(web_backend, "Бэкенд сайта", "PHP")
+ContainerDb(web_db, "База сайта", "MySQL")
+
+Container(ib_frontend, "Мобильное приложение ИБ", "ASP.NET MVC")
+Container(ib_backend, "Бэкенд ИБ", "C# / .NET")
+ContainerDb(ib_db, "База ИБ", "MS SQL Server")
+
+Container(abs_client, "Толстый клиент", "Delphi")
+ContainerDb(abs_db, "База АБС", "Oracle + PL/SQL")
+
+Container(conveyor_api, "API Конвейера", "Java + Camunda")
+ContainerDb(conveyor_db, "БД Конвейера", "Oracle")
+
+Container(scoring_api, "Сервис скоринга", "Python / Flask")
+ContainerDb(scoring_db, "БД Скоринга", "PostgreSQL")
+
+Rel(client, web_frontend, "Подаёт заявку", "HTTPS")
+Rel(client, ib_frontend, "Подаёт заявку", "HTTPS")
+Rel(client, manager, "Идёт в отделение")
+
+Rel(web_frontend, web_backend, "Отправляет данные", "JSON/HTTP")
+Rel(ib_frontend, ib_backend, "Отправляет данные", "JSON/HTTP")
+
+Rel(web_backend, conveyor_api, "Передаёт заявку", "REST")
+Rel(ib_backend, conveyor_api, "Передаёт заявку", "REST")
+
+Rel(conveyor_api, conveyor_db, "Читает/пишет")
+
+Rel(manager, abs_client, "Работает с заявкой")
+Rel(abs_client, abs_db, "Читает/пишет")
+
+Rel(abs_db, conveyor_api, "Выгружает заявки", "Batch")
+Rel(conveyor_api, abs_db, "Отдаёт одобренные", "REST/JMS")
+
+Rel(conveyor_api, scoring_api, "Запрашивает рейтинг", "REST")
+Rel(scoring_api, conveyor_api, "Отдаёт скоринг", "REST")
+Rel(scoring_api, scoring_db, "Читает/пишет")
+
+Rel(scoring_api, bki, "Запрашивает историю", "REST")
+Rel(scoring_api, abs_db, "Запрашивает историю оплат", "SQL")
+
+Rel(ib_backend, sms_provider, "Отправляет код", "API")
+Rel(web_backend, sms_provider, "Отправляет приглашение", "API")
+Rel(sms_provider, client, "Доставляет SMS")
+
+Rel(web_backend, web_db, "Читает/пишет")
+Rel(conveyor_api, scoring_api, "Массовый предрасчёт", "Batch")
+Rel(ib_backend, ib_db, "Читает/пишет")
+Rel(ib_backend, scoring_api, "Запрашивает информацию по клиенту", "API")
+
+@enduml
