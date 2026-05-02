@@ -1,0 +1,38 @@
+@startuml
+title Диаграмма контейнеров "Управление депозитными ставками" банка «Стандарт»
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Container.puml
+
+Person(credit_manager, "Сотрудник кредитного отдела", "Рассчитывает и вводит ставки по депозитам")
+Person(callcenter_operator, "Сотрудник кол-центра банка", "Консультирует клиентов по ставкам")
+Person(partner_operator, "Сотрудник партнёрского кол-центра", "Консультирует клиентов по ставкам")
+Person(deposit_manager, "Сотрудник бэк-офиса депозитов", "Подтверждает заявки, просматривает ставки в АБС")
+
+
+System_Boundary(bank_systems, "Банк «Стандарт»") {
+    Container(abs_system, "АБС (Ядро)", "Delphi + Oracle", "Хранит депозитные ставки. При изменении публикует событие в Kafka в одной транзакции с БД")
+    Container(kafka, "Apache Kafka", "Брокер сообщений", "Центральная шина событий. Топик 'deposit-rates' для изменений ставок")
+    Container(callcenter_system, "Система кол-центра банка", "Java / Spring Boot", "Принимает подписку на топик Kafka. Обновляет локальное хранилище ставок. UI для операторов")
+    Container(file_adapter, "Адаптер выгрузки ставок", "Java / Spring Boot", "Подписывается на топик Kafka. Формирует файлы (CSV/XML) с актуальными ставками. Выгружает через SFTP")
+    ContainerDb(callcenter_db, "БД кол-центра", "Oracle", "Локальное хранилище актуальных ставок для быстрого доступа операторов")
+    Container(approval_system, "Микросервис подтверждения депозитных заявок", "Java / Spring Boot", "Подписывается на топик Kafka. Сохраняет актуальные ставки в своей БД. UI для сотрудника отдела депозитов")
+    ContainerDb(approval_service_bd, "БД микросервиса подтверждения заявок", "Oracle")
+}
+
+System_Ext(partner_callcenter, "Партнёрский кол-центр", "Внешняя ИС. Поддерживает только файловый импорт через SFTP")
+Rel(credit_manager, abs_system, "Рассчитывает и вводит ставки", "Клиентское место АБС")
+Rel(abs_system, kafka, "Публикует событие 'RateChanged'", "Kafka Producer (одна транзакция с БД)")
+Rel(kafka, callcenter_system, "Доставляет событие", "Kafka Consumer")
+Rel(kafka, approval_system, "Доставляет событие", "Kafka Consumer")
+Rel(approval_system, approval_service_bd, "Доставляет событие", "Kafka Consumer")
+Rel(callcenter_system, callcenter_db, "Сохраняет актуальные ставки", "JDBC")
+Rel(callcenter_operator, callcenter_system, "Просматривает ставки для консультации", "HTTPS / Web UI")
+Rel(kafka, file_adapter, "Доставляет событие", "Kafka Consumer")
+Rel(file_adapter, partner_callcenter, "Передаёт файл со ставками", "SFTP (CSV/XML)")
+Rel(partner_operator, partner_callcenter, "Просматривает ставки", "UI (внешняя система)")
+Rel(deposit_manager, approval_system, "Подтверждает заявки, просматривает ставки в АБС", "")
+
+
+@enduml

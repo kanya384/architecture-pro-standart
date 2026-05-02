@@ -17,11 +17,11 @@ System_Boundary(StandartBankSystem, "Банк «Стандарт»") {
     System(site_bff, "BFF сайта", "PHP")
     System(internet_bank, "Интернет-банк", "ASP.NET MVC 4.5 на основе .NET Framework 4.5")
     System(ib_bff_backend, "BFF интернет-банка", "ASP.NET MVC 4.5 на основе .NET Framework 4.5")
-    System(ib_database, "БД интернет банка", "СУБД MS SQL")
+    ContainerDb(ib_database, "БД интернет банка", "СУБД MS SQL")
     System(kafka, "Брокер сообщений", "KAFKA")
     System(approval_service_ui, "UI сервиса подтверждения заявок", "React.js")
     System(approval_service_bff, "Микросервис подтверждения заявок", "Java Spring Boot")
-    System(approval_service_bd, "БД микросервиса подтверждения заявок", "Oracle")
+    ContainerDb(approval_service_bd, "БД микросервиса подтверждения заявок", "Oracle")
 
 
     System(callcentr, "Система кол-центра", "Клиент-серверная система на платформе подрядчика")
